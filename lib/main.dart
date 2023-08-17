@@ -25,7 +25,7 @@ class VideoPlayerScreen extends StatefulWidget {
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   VideoPlayerController _videoController=VideoPlayerController.networkUrl(Uri.parse(vidUrl));
-  YoutubePlayerController _youtubeController=YoutubePlayerController(initialVideoId: "");
+  YoutubePlayerController _youtubeController=YoutubePlayerController(initialVideoId: "") ;
 
   @override
   void initState() {
