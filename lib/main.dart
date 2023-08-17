@@ -1,4 +1,6 @@
+import 'package:better_player/better_player.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -15,7 +17,10 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-      String vidUrl = "https://www.youtube.com/watch?v=R3pCi5QKiik"; 
+      String vidUrl = 
+      "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4";
+      // "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"; 
+      // "https://www.youtube.com/watch?v=a6LOsdqU5fo";
 
 class VideoPlayerScreen extends StatefulWidget {
   @override
@@ -24,11 +29,31 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
-  VideoPlayerController _videoController=VideoPlayerController.networkUrl(Uri.parse(vidUrl));
+  VideoPlayerController _videoController=VideoPlayerController.networkUrl(Uri.parse(vidUrl),videoPlayerOptions: VideoPlayerOptions());
+    late BetterPlayerController _betterPlayerController;
+  late BetterPlayerDataSource _betterPlayerDataSource;
   YoutubePlayerController _youtubeController=YoutubePlayerController(initialVideoId: "") ;
+  bool isYoutube=false;
 
   @override
   void initState() {
+     BetterPlayerConfiguration betterPlayerConfiguration =
+        BetterPlayerConfiguration(
+      aspectRatio: 16 / 9,
+      fit: BoxFit.contain,
+      autoPlay: true,
+      looping: true,
+      deviceOrientationsAfterFullScreen: [
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.portraitUp
+      ],
+    );
+      _betterPlayerDataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      vidUrl,
+    );
+    _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
+    _betterPlayerController.setupDataSource(_betterPlayerDataSource);
     super.initState();
     initializePlayer();
   }
@@ -36,6 +61,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initializePlayer() {
 
     if (vidUrl.contains('youtube.com')) {
+      setState(() {
+        isYoutube=true;
+      });
       String youtubeVideoId = vidUrl.split('v=')[1];
       _youtubeController = YoutubePlayerController(
         initialVideoId: youtubeVideoId,
@@ -46,7 +74,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       );
     } else {
       // Local video URL
-      _videoController = VideoPlayerController.network(vidUrl)
+      _videoController = VideoPlayerController.contentUri(Uri.parse(vidUrl))
         ..initialize().then((_) {
           setState(() {});
         });
@@ -70,17 +98,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_youtubeController != null)
+            isYoutube?
               YoutubePlayer(
                 controller: _youtubeController,
                 showVideoProgressIndicator: true,
-              ),
-            if (_videoController != null)
-              _videoController.value.isInitialized
-                  ? AspectRatio(
-                      aspectRatio: _videoController.value.aspectRatio,
-                      child: VideoPlayer(_videoController),
-                    )
+              )
+           :
+              _betterPlayerController.isBuffering()
+                  ?   AspectRatio(
+            aspectRatio: 16 / 9,
+            child: BetterPlayer(controller: _betterPlayerController),
+          )
                   : CircularProgressIndicator(),
           ],
         ),
